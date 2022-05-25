@@ -11,22 +11,36 @@ public class PlayerController : MonoBehaviour
     private Animator anim;
 
     private float scale;                         // 向きの設定に利用する
+    private float limitPosX = 9.5f;       　     // 横方向の制限値
+    private float limitPosY = 4.45f;         　  // 縦方向の制限値
 
     public float moveSpeed;                      // 移動速度
     public float jumpPower;                      // ジャンプ・浮遊力
 
+    public bool isGrounded;
 
-    ////* ここから追加 *////
+    public GameObject[] ballons;                 // GameObject型の配列。インスペクターからヒエラルキーにある Ballon ゲームオブジェクトを２つアサインする
+
+
+    ////* ここから変数の宣言を５つ追加 *////
+
+
+    public int maxBallonCount;                   // バルーンを生成する最大数
+
+    public Transform[] ballonTrans;              // バルーンの生成位置の配列
+
+    public GameObject ballonPrefab;              // バルーンのプレファブ
+
+    public float generateTime;                   // バルーンを生成する時間
+
+    public bool isGenerating;                    // バルーンを生成中かどうかを判定する。false なら生成していない状態。true は生成中の状態
+
+
+    ////* ここまで *////
 
 
     [SerializeField, Header("Linecast用 地面判定レイヤー")]
     private LayerMask groundLayer;
-
-
-    public bool isGrounded;
-
-
-    ////* ここまで *////
 
 
     void Start()
@@ -36,16 +50,23 @@ public class PlayerController : MonoBehaviour
         anim = GetComponent<Animator>();
 
         scale = transform.localScale.x;
-    }
-
-
-
-    void Update()
-    {
 
 
         ////* ここから追加 *////
 
+
+        // 配列の初期化(バルーンの最大生成数だけ配列の要素数を用意する)
+        ballons = new GameObject[maxBallonCount];
+
+
+        ////* ここまで *////
+
+
+    }
+
+
+    void Update()
+    {
 
         // 地面接地  Physics2D.Linecastメソッドを実行して、Ground Layerとキャラのコライダーとが接地している距離かどうかを確認し、接地しているなら true、接地していないなら false を戻す
         isGrounded = Physics2D.Linecast(transform.position + transform.up * 0.4f, transform.position - transform.up * 0.9f, groundLayer);
@@ -54,24 +75,58 @@ public class PlayerController : MonoBehaviour
         Debug.DrawLine(transform.position + transform.up * 0.4f, transform.position - transform.up * 0.9f, Color.red, 1.0f);
 
 
-        ////* ここまで *////
+        ////* ここから修正 *////
 
+        // ballons変数の最初の要素の値が空ではないなら = バルーンが１つ生成されるとこの要素に値が代入される = バルーンが１つあるなら
+        if (ballons[0] != null)
+        {         // <=　☆　条件を変更する　☆
 
-        // ジャンプ
-        if (Input.GetButtonDown(jump))
+            ////* ここまで *////
+
+            // ジャンプ
+            if (Input.GetButtonDown(jump))
+            {
+                Jump();
+            }
+
+            // 接地していない(空中にいる)間で、落下中の場合
+            if (isGrounded == false && rb.velocity.y < 0.15f)
+            {
+
+                // 落下アニメを繰り返す
+                anim.SetTrigger("Fall");
+            }
+        }
+        else
         {
-            Jump();
+            Debug.Log("バルーンがない。ジャンプ不可");
+        }
+
+
+
+        // Velocity.y の値が 5.0f を超える場合(ジャンプを連続で押した場合)
+        if (rb.velocity.y > 5.0f)
+        {
+
+            // Velocity.y の値に制限をかける(落下せずに上空で待機できてしまう現象を防ぐため)
+            rb.velocity = new Vector2(rb.velocity.x, 5.0f);
         }
 
 
         ////* ここから追加 *////
 
 
-        // 接地していない(空中にいる)間で、落下中の場合
-        if (isGrounded == false && rb.velocity.y < 0.15f)
+        // 地面に接地していて、バルーンが生成中ではない場合
+        if (isGrounded == true && isGenerating == false)
         {
-            // 落下アニメを繰り返す
-            anim.SetTrigger("Fall");
+
+            // Qボタンを押したら
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+
+                // バルーンを１つ作成する
+                StartCoroutine(GenerateBallon());
+            }
         }
 
 
@@ -154,5 +209,56 @@ public class PlayerController : MonoBehaviour
             anim.SetFloat("Run", 0.0f);
             anim.SetBool("Idle", true);
         }
+
+        // 現在の位置情報が移動範囲の制限範囲を超えていないか確認する。超えていたら、制限範囲内に収める
+        float posX = Mathf.Clamp(transform.position.x, -limitPosX, limitPosX);
+        float posY = Mathf.Clamp(transform.position.y, -limitPosY, limitPosY);
+
+        // 現在の位置を更新(制限範囲を超えた場合、ここで移動の範囲を制限する)
+        transform.position = new Vector2(posX, posY);
     }
+
+
+    ////* ここからメソッドを１つ追加 *////
+
+
+    /// <summary>
+    /// バルーン生成
+    /// </summary>
+    /// <returns></returns>
+    private IEnumerator GenerateBallon()
+    {
+
+        // すべての配列の要素にバルーンが存在している場合には、バルーンを生成しない
+        if (ballons[1] != null)
+        {
+            yield break;
+        }
+
+        // 生成中状態にする
+        isGenerating = true;
+
+        // １つめの配列の要素が空なら
+        if (ballons[0] == null)
+        {
+            // 1つ目のバルーン生成を生成して、1番目の配列へ代入
+            ballons[0] = Instantiate(ballonPrefab, ballonTrans[0]);
+        }
+        else
+        {
+            // 2つ目のバルーン生成を生成して、2番目の配列へ代入
+            ballons[1] = Instantiate(ballonPrefab, ballonTrans[1]);
+        }
+
+        // 生成時間分待機
+        yield return new WaitForSeconds(generateTime);
+
+        // 生成中状態終了。再度生成できるようにする
+        isGenerating = false;
+    }
+
+
+    ////* ここまで *////
+
+
 }
