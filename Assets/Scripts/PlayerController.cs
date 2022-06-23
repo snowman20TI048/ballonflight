@@ -11,8 +11,10 @@ public class PlayerController : MonoBehaviour
     private Animator anim;
 
     private float scale;                         // 向きの設定に利用する
-    private float limitPosX = 9.5f;       　     // 横方向の制限値
-    private float limitPosY = 4.45f;         　  // 縦方向の制限値
+    private float limitPosX = 9.5f;              // 横方向の制限値
+    private float limitPosY = 4.45f;             // 縦方向の制限値
+
+    public bool isFirstGenerateBallon;          // 初めてバルーンを生成したかを判定するための変数
 
     public float moveSpeed;                      // 移動速度
     public float jumpPower;                      // ジャンプ・浮遊力
@@ -20,27 +22,31 @@ public class PlayerController : MonoBehaviour
     public bool isGrounded;
 
     public GameObject[] ballons;                 // GameObject型の配列。インスペクターからヒエラルキーにある Ballon ゲームオブジェクトを２つアサインする
-
-
-    ////* ここから変数の宣言を５つ追加 *////
-
-
     public int maxBallonCount;                   // バルーンを生成する最大数
-
     public Transform[] ballonTrans;              // バルーンの生成位置の配列
-
     public GameObject ballonPrefab;              // バルーンのプレファブ
 
     public float generateTime;                   // バルーンを生成する時間
-
     public bool isGenerating;                    // バルーンを生成中かどうかを判定する。false なら生成していない状態。true は生成中の状態
 
+    public float knockbackPower;                 // 敵と接触した際に吹き飛ばされる力
+    public int coinPoint;                        // コインを獲得すると増えるポイントの総数
 
-    ////* ここまで *////
+
+    ///* ここから追加 *////
+
+
+    public UIManager uiManager;
+
+
+    ////* ここまで追加 *////
 
 
     [SerializeField, Header("Linecast用 地面判定レイヤー")]
     private LayerMask groundLayer;
+
+    [SerializeField]
+    private StartChecker startChecker;
 
 
     void Start()
@@ -51,19 +57,9 @@ public class PlayerController : MonoBehaviour
 
         scale = transform.localScale.x;
 
-
-        ////* ここから追加 *////
-
-
         // 配列の初期化(バルーンの最大生成数だけ配列の要素数を用意する)
         ballons = new GameObject[maxBallonCount];
-
-
-        ////* ここまで *////
-
-
     }
-
 
     void Update()
     {
@@ -74,14 +70,9 @@ public class PlayerController : MonoBehaviour
         // Sceneビューに Physics2D.LinecastメソッドのLineを表示する
         Debug.DrawLine(transform.position + transform.up * 0.4f, transform.position - transform.up * 0.9f, Color.red, 1.0f);
 
-
-        ////* ここから修正 *////
-
         // ballons変数の最初の要素の値が空ではないなら = バルーンが１つ生成されるとこの要素に値が代入される = バルーンが１つあるなら
         if (ballons[0] != null)
-        {         // <=　☆　条件を変更する　☆
-
-            ////* ここまで *////
+        {
 
             // ジャンプ
             if (Input.GetButtonDown(jump))
@@ -102,8 +93,6 @@ public class PlayerController : MonoBehaviour
             Debug.Log("バルーンがない。ジャンプ不可");
         }
 
-
-
         // Velocity.y の値が 5.0f を超える場合(ジャンプを連続で押した場合)
         if (rb.velocity.y > 5.0f)
         {
@@ -111,10 +100,6 @@ public class PlayerController : MonoBehaviour
             // Velocity.y の値に制限をかける(落下せずに上空で待機できてしまう現象を防ぐため)
             rb.velocity = new Vector2(rb.velocity.x, 5.0f);
         }
-
-
-        ////* ここから追加 *////
-
 
         // 地面に接地していて、バルーンが生成中ではない場合
         if (isGrounded == true && isGenerating == false)
@@ -128,11 +113,6 @@ public class PlayerController : MonoBehaviour
                 StartCoroutine(GenerateBallon());
             }
         }
-
-
-        ////* ここまで *////
-
-
     }
 
     /// <summary>
@@ -148,13 +128,11 @@ public class PlayerController : MonoBehaviour
         anim.SetTrigger("Jump");
     }
 
-
     void FixedUpdate()
     {
         // 移動
         Move();
     }
-
 
     /// <summary>
     /// 移動
@@ -202,7 +180,7 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            //  左右の入力がなかったら横移動の速度を0にして停止する
+            //  左右の入力がなかったら横移動の速度を0にしてピタッと止まるようにする
             rb.velocity = new Vector2(0, rb.velocity.y);
 
             //  走るアニメの再生を止めて、待機状態のアニメの再生への遷移を行う
@@ -217,10 +195,6 @@ public class PlayerController : MonoBehaviour
         // 現在の位置を更新(制限範囲を超えた場合、ここで移動の範囲を制限する)
         transform.position = new Vector2(posX, posY);
     }
-
-
-    ////* ここからメソッドを１つ追加 *////
-
 
     /// <summary>
     /// バルーン生成
@@ -238,16 +212,35 @@ public class PlayerController : MonoBehaviour
         // 生成中状態にする
         isGenerating = true;
 
+        // isFirstGenerateBallon 変数の値が false、つまり、ゲームを開始してから、まだバルーンを１回も生成していないなら
+        if (isFirstGenerateBallon == false)
+        {
+
+            // 初回バルーン生成を行ったと判断し、true に変更する = 次回以降はバルーンを生成しても、if 文の条件を満たさなくなり、この処理には入らない
+            isFirstGenerateBallon = true;
+
+            Debug.Log("初回のバルーン生成");
+
+            // startChecker 変数に代入されている StartChecker スクリプトにアクセスして、SetInitialSpeed メソッドを実行する
+            startChecker.SetInitialSpeed();
+        }
+
         // １つめの配列の要素が空なら
         if (ballons[0] == null)
         {
+
             // 1つ目のバルーン生成を生成して、1番目の配列へ代入
             ballons[0] = Instantiate(ballonPrefab, ballonTrans[0]);
+            ballons[0].GetComponent<Ballon>().SetUpBallon(this);
+
         }
         else
         {
+
             // 2つ目のバルーン生成を生成して、2番目の配列へ代入
             ballons[1] = Instantiate(ballonPrefab, ballonTrans[1]);
+            ballons[1].GetComponent<Ballon>().SetUpBallon(this);
+
         }
 
         // 生成時間分待機
@@ -257,8 +250,62 @@ public class PlayerController : MonoBehaviour
         isGenerating = false;
     }
 
+    private void OnCollisionEnter2D(Collision2D col)
+    {
 
-    ////* ここまで *////
+        // 接触したコライダーを持つゲームオブジェクトのTagがEnemyなら 
+        if (col.gameObject.tag == "Enemy")
+        {
+
+            // キャラと敵の位置から距離と方向を計算
+            Vector3 direction = (transform.position - col.transform.position).normalized;
+
+            // 敵の反対側にキャラを吹き飛ばす
+            transform.position += direction * knockbackPower;
+        }
+    }
+
+    /// <summary>
+    /// バルーン破壊
+    /// </summary>
+    public void DestroyBallon()
+    {
+
+        // TODO 後程、バルーンが破壊される際に「割れた」ように見えるアニメ演出を追加する
+
+        if (ballons[1] != null)
+        {
+            Destroy(ballons[1]);
+        }
+        else if (ballons[0] != null)
+        {
+            Destroy(ballons[0]);
+        }
+    }
+
+    // IsTriggerがオンのコライダーを持つゲームオブジェクトを通過した場合に呼び出されるメソッド
+    private void OnTriggerEnter2D(Collider2D col)
+    {
+
+        // 通過したコライダーを持つゲームオブジェクトの Tag が Coin の場合
+        if (col.gameObject.tag == "Coin")
+        {
+
+            // 通過したコインのゲームオブジェクトの持つ Coin スクリプトを取得し、point 変数の値をキャラの持つ coinPoint 変数に加算
+            coinPoint += col.gameObject.GetComponent<Coin>().point;
 
 
+            ////* ここから追加 *////
+
+
+            uiManager.UpdateDisplayScore(coinPoint);
+
+
+            ////* ここまで追加 *////
+
+
+            // 通過したコインのゲームオブジェクトを破壊する
+            Destroy(col.gameObject);
+        }
+    }
 }

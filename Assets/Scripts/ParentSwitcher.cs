@@ -15,7 +15,7 @@ public class ParentSwitcher : MonoBehaviour
         {
 
             // 接触しているゲームオブジェクト(キャラ)を、このスクリプトがアタッチされているゲームオブジェクト(床)の子オブジェクトにする
-            col.transform.SetParent(transform);
+            col.transform.SetParent(transform); //親子関係を変更
         }
     }
 
@@ -28,7 +28,7 @@ public class ParentSwitcher : MonoBehaviour
         {
 
             // 接触状態ではなくなった(離れた)ゲームオブジェクト(キャラ)と、このスクリプトがアタッチされているゲームオブジェクト(床)の親子関係を解消する
-            col.transform.SetParent(null);
+            col.transform.SetParent(null); //親子関係を解除
         }
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class FloorGenerator : MonoBehaviour
 {
-    [SerializeField]
+    [SerializeField]                           //privateのものも、inspector画面で見えるようになる
     private GameObject aerialFloorPrefab;     // プレファブにした AerialFloor_Mid ゲームオブジェクトをインスペクターからアサインする
 
     [SerializeField]
@@ -19,7 +19,7 @@ public class FloorGenerator : MonoBehaviour
     {
 
         // 時間を計測する
-        timer += Time.deltaTime;
+        timer += Time.deltaTime;  //差分値（updateにかかる時間）を足していく
 
         // 計測している時間が waitTime の値と同じか、超えたら
         if (timer >= waitTime)
