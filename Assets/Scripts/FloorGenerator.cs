@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class FloorGenerator : MonoBehaviour
 {
-    [SerializeField]                           //privateのものも、inspector画面で見えるようになる
+    [SerializeField]
     private GameObject aerialFloorPrefab;     // プレファブにした AerialFloor_Mid ゲームオブジェクトをインスペクターからアサインする
 
     [SerializeField]
@@ -15,11 +15,18 @@ public class FloorGenerator : MonoBehaviour
 
     private float timer;                      // 待機時間の計測用
 
+
+    ////* ここから追加 *////
+
+    private GameDirector gameDirector;
+
+    ////* ここまで *////
+
+
     void Update()
     {
-
         // 時間を計測する
-        timer += Time.deltaTime;  //差分値（updateにかかる時間）を足していく
+        timer += Time.deltaTime;
 
         // 計測している時間が waitTime の値と同じか、超えたら
         if (timer >= waitTime)
@@ -47,5 +54,34 @@ public class FloorGenerator : MonoBehaviour
 
         // 生成されたゲームオブジェクトのY軸にランダムな値を加算して、生成されるたびに高さの位置を変更する
         obj.transform.position = new Vector2(obj.transform.position.x, obj.transform.position.y + randomPosY);
+
+
+        ////* ここから追加 *////
+
+        // 生成数をカウントアップ
+        gameDirector.GenerateCount++;
+
+        ////* ここまで *////
+
     }
+
+
+    ////* 新しいメソッドを１つ、ここから追加 *////
+
+
+    /// <summary>
+    /// FloorGeneratorの準備
+    /// </summary>
+    /// <param name="gameDirector"></param>
+    public void SetUpGenerator(GameDirector gameDirector)
+    {
+        this.gameDirector = gameDirector;
+
+        // TODO 他にも初期設定したい情報がある場合にはここに処理を追加する
+
+    }
+
+
+    ////* ここまで *////
+
 }

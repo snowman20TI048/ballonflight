@@ -23,10 +23,13 @@ public class Ballon : MonoBehaviour
         transform.localScale = Vector3.zero;
 
         // だんだんバルーンが膨らむアニメ演出
-        transform.DOScale(scale, 2.0f).SetEase(Ease.InBounce);
+        transform.DOScale(scale, 2.0f)
+            .SetEase(Ease.InBounce);
 
         // 左右にふわふわさせる
-        tweener = transform.DOLocalMoveX(0.02f, 0.2f).SetEase(Ease.Flash).SetLoops(-1, LoopType.Yoyo);
+        tweener = transform.DOLocalMoveX(0.02f, 0.2f)
+            .SetEase(Ease.Flash)
+            .SetLoops(-1, LoopType.Yoyo);
     }
 
     private void OnCollisionEnter2D(Collision2D col)
