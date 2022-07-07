@@ -4,14 +4,22 @@ using UnityEngine;
 
 public class GameDirector : MonoBehaviour
 {
+    // ゴール
     [SerializeField]
-    private GoalChecker goalHousePrefab;            // ゴール地点のプレファブをアサイン
+    private GoalChecker goalHousePrefab;
+
+    // Player
+    [SerializeField]
+    private PlayerController playerController;
 
     [SerializeField]
-    private PlayerController playerController;      // ヒエラルキーにある Yuko_Player ゲームオブジェクトをアサイン
+    private FloorGenerator[] floorGenerators;
 
     [SerializeField]
-    private FloorGenerator[] floorGenerators;       // floorGenerator スクリプトのアタッチされているゲームオブジェクトをアサイン
+    private RandomObjectGenerator[] randomObjectGenerators;
+
+    [SerializeField]
+    private AudioManager audioManager;
 
     private bool isSetUp;                           // ゲームの準備判定用。true になるとゲーム開始
 
@@ -48,6 +56,10 @@ public class GameDirector : MonoBehaviour
 
     void Start()
     {
+
+        // タイトル曲再生
+        StartCoroutine(audioManager.PlayBGM(0));
+
         // ゲーム開始状態にセット
         isGameUp = false;
         isSetUp = false;
@@ -55,8 +67,8 @@ public class GameDirector : MonoBehaviour
         // FloorGeneratorの準備
         SetUpFloorGenerators();
 
-        // TODO 各ジェネレータを停止
-        Debug.Log("生成停止");
+        // 各ジェネレータの生成を停止
+        StopGenerators();
     }
 
     /// <summary>
@@ -66,8 +78,7 @@ public class GameDirector : MonoBehaviour
     {
         for (int i = 0; i < floorGenerators.Length; i++)
         {
-            // FloorGeneratorの準備・初期設定を行う
-            floorGenerators[i].SetUpGenerator(this);           // <=　メソッドを追加する修正が済むまでコメントアウト
+            floorGenerators[i].SetUpGenerator(this);
         }
     }
 
@@ -80,8 +91,11 @@ public class GameDirector : MonoBehaviour
             // 準備完了
             isSetUp = true;
 
-            // TODO 各ジェネレータを動かし始める
-            Debug.Log("生成スタート");
+            // 各ジェネレータの生成をスタート
+            ActivateGenerators();
+
+            // タイトル曲を終了し、メイン曲を再生
+            StartCoroutine(audioManager.PlayBGM(1));
         }
     }
 
@@ -93,8 +107,14 @@ public class GameDirector : MonoBehaviour
         // ゴール地点を生成
         GoalChecker goalHouse = Instantiate(goalHousePrefab);
 
-        // TODO ゴール地点の初期設定
-        Debug.Log("ゴール地点 生成");
+
+        ////* ここから追加 *////
+
+        // ゴール地点の初期設定
+        goalHouse.SetUpGoalHouse(this); 
+
+        ////* ここまで *////
+
     }
 
     /// <summary>
@@ -106,7 +126,59 @@ public class GameDirector : MonoBehaviour
         // ゲーム終了
         isGameUp = true;
 
-        // TODO 各ジェネレータを停止
-        Debug.Log("生成停止");
+        // 各ジェネレータの生成を停止
+        StopGenerators();
     }
+
+    /// <summary>
+    /// 各ジェネレータを停止する
+    /// </summary>
+    private void StopGenerators()
+    {
+        for (int i = 0; i < randomObjectGenerators.Length; i++)
+        {
+            randomObjectGenerators[i].SwitchActivation(false);
+        }
+
+        for (int i = 0; i < floorGenerators.Length; i++)
+        {
+            floorGenerators[i].SwitchActivation(false);
+        }
+    }
+
+
+    /// <summary>
+    /// 各ジェネレータを動かし始める
+    /// </summary>
+    private void ActivateGenerators()
+    {
+        for (int i = 0; i < randomObjectGenerators.Length; i++)
+        {
+            randomObjectGenerators[i].SwitchActivation(true);
+        }
+
+        for (int i = 0; i < floorGenerators.Length; i++)
+        {
+            floorGenerators[i].SwitchActivation(true);
+        }
+    }
+
+
+
+    ////* ここから新しいメソッドを追加 *////
+
+
+    /// <summary>
+    /// ゴール到着
+    /// </summary>
+    public void GoalClear()
+    {
+        // クリアの曲再生
+        StartCoroutine(audioManager.PlayBGM(2));
+    }
+
+
+    ////* ここまで *////
+
+
 }

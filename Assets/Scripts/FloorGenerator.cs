@@ -15,16 +15,33 @@ public class FloorGenerator : MonoBehaviour
 
     private float timer;                      // 待機時間の計測用
 
+    private GameDirector gameDirector;
+
 
     ////* ここから追加 *////
 
-    private GameDirector gameDirector;
+
+    private bool isActivate;                  // 生成の状態を設定し、生成を行うかどうかの判定に利用する。trueなら 生成し、false なら生成しない
+
 
     ////* ここまで *////
 
 
     void Update()
     {
+
+
+        ////* ここから追加 *////
+
+        // 停止中は生成を行わない
+        if (isActivate == false)
+        {
+            return;
+        }
+
+        ////* ここまで *////
+
+
         // 時間を計測する
         timer += Time.deltaTime;
 
@@ -55,30 +72,30 @@ public class FloorGenerator : MonoBehaviour
         // 生成されたゲームオブジェクトのY軸にランダムな値を加算して、生成されるたびに高さの位置を変更する
         obj.transform.position = new Vector2(obj.transform.position.x, obj.transform.position.y + randomPosY);
 
-
-        ////* ここから追加 *////
-
         // 生成数をカウントアップ
         gameDirector.GenerateCount++;
-
-        ////* ここまで *////
-
     }
 
-
-    ////* 新しいメソッドを１つ、ここから追加 *////
-
-
     /// <summary>
-    /// FloorGeneratorの準備
+    /// ジェネレータの準備
     /// </summary>
     /// <param name="gameDirector"></param>
     public void SetUpGenerator(GameDirector gameDirector)
     {
         this.gameDirector = gameDirector;
+    }
 
-        // TODO 他にも初期設定したい情報がある場合にはここに処理を追加する
 
+    ////* 新しいメソッドをここから追加 *////
+
+
+    /// <summary>
+    /// 生成状態のオン/オフを切り替え
+    /// </summary>
+    /// <param name="isSwitch"></param>
+    public void SwitchActivation(bool isSwitch)
+    {
+        isActivate = isSwitch;
     }
 
 

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RandomObjectgenerator : MonoBehaviour
+public class RandomObjectGenerator : MonoBehaviour
 {
     [SerializeField]
     private GameObject[] objPrefab;
@@ -15,7 +15,16 @@ public class RandomObjectgenerator : MonoBehaviour
 
     private float waitTime;
 
-    private float timer;                      // 待機時間の計測用
+    private float timer;                             // 待機時間の計測用
+
+
+    ////* ここから追加 *////
+
+    private bool isActivate;                         // 生成の状態を設定し、生成を行うかどうかの判定に利用する。trueなら 生成し、false なら生成しない
+
+    private GameDirector gameDirector;
+
+    ////* ここまで *////
 
 
     void Start()
@@ -34,6 +43,19 @@ public class RandomObjectgenerator : MonoBehaviour
 
     void Update()
     {
+
+        ////* ここから追加 *////
+
+
+        // 停止中は生成を行わない
+        if (isActivate == false)
+        {
+            return;
+        }
+
+        ////* ここまで *////
+
+
         // 計測用タイマーを加算
         timer += Time.deltaTime;
 
@@ -69,4 +91,21 @@ public class RandomObjectgenerator : MonoBehaviour
         // 次の生成までの時間をセットする
         SetGenerateTime();
     }
+
+
+    ////* 新しいメソッドをここから追加 *////
+
+
+    /// <summary>
+    /// 生成状態のオン/オフを切り替え
+    /// </summary>
+    /// <param name="isSwitch"></param>
+    public void SwitchActivation(bool isSwitch)
+    {
+        isActivate = isSwitch;
+    }
+
+
+    ////* ここまで *////
+
 }

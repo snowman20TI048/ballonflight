@@ -29,7 +29,8 @@ public class Ballon : MonoBehaviour
         // ç∂âEÇ…Ç”ÇÌÇ”ÇÌÇ≥ÇπÇÈ
         tweener = transform.DOLocalMoveX(0.02f, 0.2f)
             .SetEase(Ease.Flash)
-            .SetLoops(-1, LoopType.Yoyo);
+            .SetLoops(-1, LoopType.Yoyo)
+            .SetLink(gameObject);
     }
 
     private void OnCollisionEnter2D(Collision2D col)

@@ -12,6 +12,15 @@ public class GoalChecker : MonoBehaviour
     private bool isGoal;                 // ゴールの重複判定防止用。一度ゴール判定したら true にして、ゴールの判定は１回だけしか行わないようにする
 
 
+    ////* ここから追加 *////
+
+
+    private GameDirector gameDirector;
+
+
+    ////* ここまで *////
+
+
     void Update()
     {
 
@@ -34,17 +43,41 @@ public class GoalChecker : MonoBehaviour
 
             Debug.Log("ゲームクリア");
 
-
-            ////* ここから追加 *////
-
             // PlayerControllerの情報を取得
             PlayerController playerController = col.gameObject.GetComponent<PlayerController>();
 
             // PlayerControllerの持つ、UIManagerの変数を利用して、GenerateResultPopUpメソッドを呼び出す。引数にはPlayerControllerのcoinCountを渡す
             playerController.uiManager.GenerateResultPopUp(playerController.coinPoint);
 
+
+
+            ////* ここから追加 *////
+
+
+            // ゴール到着
+            gameDirector.GoalClear();
+
+
             ////* ここまで *////
 
         }
     }
+
+
+
+    ////* ここからメソッドを１つ追加 *////
+
+    /// <summary>
+    /// ゴール地点の初期設定
+    /// </summary>
+    public void SetUpGoalHouse(GameDirector gameDirector)
+    {
+
+        this.gameDirector = gameDirector;
+
+        // TODO 他に初期設定が必要な場合にはここに追加する
+    }
+
+    ////* ここまで *////
+
 }
