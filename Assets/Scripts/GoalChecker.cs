@@ -11,11 +11,14 @@ public class GoalChecker : MonoBehaviour
 
     private bool isGoal;                 // ゴールの重複判定防止用。一度ゴール判定したら true にして、ゴールの判定は１回だけしか行わないようにする
 
+    private GameDirector gameDirector;
+
 
     ////* ここから追加 *////
 
 
-    private GameDirector gameDirector;
+    [SerializeField]
+    private GameObject secretfloorObj;    // 新しく作成した Ground_Set_Secret ゲームオブジェクトを操作するための変数
 
 
     ////* ここまで *////
@@ -49,23 +52,24 @@ public class GoalChecker : MonoBehaviour
             // PlayerControllerの持つ、UIManagerの変数を利用して、GenerateResultPopUpメソッドを呼び出す。引数にはPlayerControllerのcoinCountを渡す
             playerController.uiManager.GenerateResultPopUp(playerController.coinPoint);
 
+            // ゴール到着
+            gameDirector.GoalClear();
 
 
             ////* ここから追加 *////
 
 
-            // ゴール到着
-            gameDirector.GoalClear();
+            // 落下防止の床を表示
+            secretfloorObj.SetActive(true);
+
+            // 落下防止の床を画面下からアニメさせて表示
+            secretfloorObj.transform.DOLocalMoveY(0.65f, 2.5f).SetEase(Ease.Linear).SetRelative();
 
 
             ////* ここまで *////
 
         }
     }
-
-
-
-    ////* ここからメソッドを１つ追加 *////
 
     /// <summary>
     /// ゴール地点の初期設定
@@ -75,9 +79,15 @@ public class GoalChecker : MonoBehaviour
 
         this.gameDirector = gameDirector;
 
-        // TODO 他に初期設定が必要な場合にはここに追加する
+
+        ////* ここから追加 *////
+
+
+        // 落下防止の床を非表示
+        secretfloorObj.SetActive(false);
+
+
+        ////* ここまで *////
+
     }
-
-    ////* ここまで *////
-
 }

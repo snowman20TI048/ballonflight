@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;         //  <=  ☆　宣言を追加します
 
 public class PlayerController : MonoBehaviour
 {
@@ -14,14 +15,16 @@ public class PlayerController : MonoBehaviour
     private float limitPosX = 9.5f;              // 横方向の制限値
     private float limitPosY = 4.45f;             // 縦方向の制限値
 
-
-    ///* ここから追加 *////
-
-
     private bool isGameOver = false;             // GameOver状態の判定用。true ならゲームオーバー。
 
 
-    ////* ここまで追加 *////
+    ////* ここから追加 *////
+
+
+    private int ballonCount;
+
+
+    ////* ここまで *////
 
 
     public bool isFirstGenerateBallon;          // 初めてバルーンを生成したかを判定するための変数
@@ -50,6 +53,40 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private StartChecker startChecker;
 
+    [SerializeField]
+    private AudioClip knockbackSE;                    // 敵と接触した際に鳴らすSE用のオーディオファイルをアサインする
+
+    [SerializeField]
+    private GameObject knockbackEffectPrefab;         // 敵と接触した際に生成するエフェクト用のプレファブのゲームオブジェクトをアサインする
+
+    /*  オリジナル開始    */
+    [SerializeField]
+    private AudioClip coinSE;                    // 敵と接触した際に鳴らすSE用のオーディオファイルをアサインする
+
+    [SerializeField]
+    private GameObject coinEffectPrefab;         // 敵と接触した際に生成するエフェクト用のプレファブのゲームオブジェクトをアサインする
+
+
+    /*  オリジナル終了    */
+
+
+
+    ////* ここから追加 *////
+
+
+    [SerializeField]
+    private Joystick joystick;                        // FloatingJoystick ゲームオブジェクトにアタッチされている FloatingJoystick スクリプトのアサイン用
+
+    [SerializeField]
+    private Button btnJump;                           // btnJump ゲームオブジェクトにアタッチされている Button コンポーネントのアサイン用
+
+    [SerializeField]
+    private Button btnDetach;                         // btnDetachOrGenerate ゲームオブジェクトにアタッチされている Button コンポーネントのアサイン用
+
+
+    ////* ここまで *////
+
+   
 
     void Start()
     {
@@ -61,6 +98,19 @@ public class PlayerController : MonoBehaviour
 
         // 配列の初期化(バルーンの最大生成数だけ配列の要素数を用意する)
         ballons = new GameObject[maxBallonCount];
+
+
+        ////* ここから追加 *////
+
+
+        // どのような処理を行っているのか、コメントを書いてみましょう。
+        btnJump.onClick.AddListener(OnClickJump);
+        btnDetach.onClick.AddListener(OnClickDetachOrGenerate);
+
+
+        ////* ここまで *////
+
+
     }
 
     void Update()
@@ -133,19 +183,10 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-
-
-        ////* ここから追加 *////
-
-
         if (isGameOver == true)
         {
             return;
         }
-
-
-        ////* ここまで *////
-
 
         // 移動
         Move();
@@ -157,8 +198,21 @@ public class PlayerController : MonoBehaviour
     private void Move()
     {
 
+
+        ////* ここから追加 *////
+
+
+#if UNITY_EDITOR
         // 水平(横)方向への入力受付
         float x = Input.GetAxis(horizontal);
+        x = joystick.Horizontal; // エディターでの確認が終了したらコメントアウトしてください
+#else
+        float x = joystick.Horizontal;
+#endif
+
+
+        ////* ここまで *////
+
 
         // x の値が 0 ではない場合 = キー入力がある場合
         if (x != 0)
@@ -260,6 +314,18 @@ public class PlayerController : MonoBehaviour
 
         }
 
+
+        ////* ここから追加 *////
+
+
+        // バルーンの数を増やす
+        ballonCount++;
+
+
+
+        ////* ここまで *////
+
+
         // 生成時間分待機
         yield return new WaitForSeconds(generateTime);
 
@@ -279,6 +345,15 @@ public class PlayerController : MonoBehaviour
 
             // 敵の反対側にキャラを吹き飛ばす
             transform.position += direction * knockbackPower;
+
+            // 敵との接触用のSE(AudioClip)を再生する
+            AudioSource.PlayClipAtPoint(knockbackSE, transform.position);
+
+            // 接触した際のエフェクトを、敵の位置に、クローンとして生成する。生成されたゲームオブジェクトを変数へ代入
+            GameObject knockbackEffect = Instantiate(knockbackEffectPrefab, col.transform.position, Quaternion.identity);
+
+            // エフェクトを 0.5 秒後に破棄。生成したタイミングで変数に代入しているので、削除の命令が出せる
+            Destroy(knockbackEffect, 0.5f);
         }
     }
 
@@ -298,6 +373,18 @@ public class PlayerController : MonoBehaviour
         {
             Destroy(ballons[0]);
         }
+
+
+        ////* ここから追加 *////
+
+
+        // バルーンの数を減らす
+        ballonCount--;
+
+
+        ////* ここまで *////
+
+
     }
 
     // IsTriggerがオンのコライダーを持つゲームオブジェクトを通過した場合に呼び出されるメソッド
@@ -313,14 +400,17 @@ public class PlayerController : MonoBehaviour
 
             uiManager.UpdateDisplayScore(coinPoint);
 
+            // コインとの接触用のSE(AudioClip)を再生する
+           AudioSource.PlayClipAtPoint(coinSE, transform.position);
+
+            // 接触した際のエフェクトを、敵の位置に、クローンとして生成する。生成されたゲームオブジェクトを変数へ代入
+            GameObject knockbackEffect = Instantiate(coinEffectPrefab, col.transform.position, Quaternion.identity);
+
+
             // 通過したコインのゲームオブジェクトを破壊する
             Destroy(col.gameObject);
         }
     }
-
-
-    ////* 新しくメソッドを１つ追加。ここから *////
-
 
     /// <summary>
     /// ゲームオーバー
@@ -334,6 +424,37 @@ public class PlayerController : MonoBehaviour
 
         // 画面にゲームオーバー表示を行う
         uiManager.DisplayGameOverInfo();
+    }
+
+
+    ////* ここからメソッドを２つ追加 *////
+
+
+    /// <summary>
+    /// ジャンプボタンを押した際の処理
+    /// </summary>
+    private void OnClickJump()
+    {
+        // バルーンが１つ以上あるなら
+        if (ballonCount > 0)
+        {
+            Jump();
+        }
+    }
+
+    /// <summary>
+    /// バルーン生成ボタンを押した際の処理
+    /// </summary>
+    private void OnClickDetachOrGenerate()
+    {
+
+        // 地面に接地していて、バルーンが２個以下の場合
+        if (isGrounded == true && ballonCount < maxBallonCount && isGenerating == false)
+        {
+
+            // バルーンの生成中でなければ、バルーンを１つ作成する
+            StartCoroutine(GenerateBallon());
+        }
     }
 
 
